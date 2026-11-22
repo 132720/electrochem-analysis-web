@@ -1,0 +1,3 @@
+# Professional EIS analysis and file parsers
+pyimpspec>=5.1.3,<6
+openpyxl>=3.1

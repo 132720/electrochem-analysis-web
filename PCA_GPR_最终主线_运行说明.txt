@@ -1,0 +1,121 @@
+PCA-GPR 温度 GCD 最终主线版
+
+一、当前正式方法
+----------------
+不再把 PG-BDL、Ghosh a/b/c 参数化或 Fernández 2R(C+kU) 作为论文主模型。
+正式主线为：
+
+Temperature + Current density
+        |
+        +--> GPR(log total period)
+        |
+        +--> PCA latent GPRs
+                  |
+                  v
+            inverse PCA
+                  |
+                  v
+         normalized full GCD
+                  |
+          × predicted period
+                  |
+                  v
+             final V(t)
+
+主模型：PCA-GPR
+强基准：PCA-Ridge
+物理诊断：Peukert discharge law
+后续机理：temperature-dependent EIS
+
+二、在当前 25 条原始 GCD 上的最终代码实测
+---------------------------------------
+数据：
+- 30 / 40 / 50 / 60 / 70 °C
+- 0.5 / 1 / 1.5 / 2 / 2.5 A/g
+- 共 25 个条件
+- 最终代码自动解析 25 条，0 个解析错误
+
+使用全部 25 条曲线训练最终 full-cycle PCA：
+- PCA components = 9
+- cumulative explained variance = 99.6284%
+
+Rolling blocked-temperature benchmark：
+PCA-GPR
+- 50 °C：shape RMSE 16.281 mV；physical-time RMSE 30.626 mV；period error 6.721%
+- 60 °C：shape RMSE 7.428 mV；physical-time RMSE 112.365 mV；period error 16.561%
+- 70 °C：shape RMSE 8.324 mV；physical-time RMSE 47.290 mV；period error 4.086%
+- overall：shape RMSE 10.678 mV；physical-time RMSE 63.427 mV；period error 9.123%
+
+PCA-Ridge
+- overall：shape RMSE 13.705 mV；physical-time RMSE 84.659 mV；period error 15.354%
+
+因此：
+- PCA-GPR 对 normalized curve shape 比 PCA-Ridge 更好；
+- PCA-GPR 对 total period 也更好；
+- 60 °C 的真实时间轴仍是当前最明显的限制；
+- 不应只报告 normalized shape 指标。
+
+三、为什么选 PCA-GPR
+-------------------
+1. Ghosh 3P：
+   charge 可以表示，但 discharge 参数失配且时间常数退化，不适合继续预测 a/b/c。
+2. Fernández 2R(C+kU)：
+   对本材料完整 GCD 拟合误差高，且参数大量触边，不适合作为主参数化。
+3. PCA：
+   对本批 GCD 显示强低维性，因此用低维 latent coefficients 表示完整曲线更稳健。
+4. GPR：
+   适合当前小样本条件，且能同时提供预测均值和不确定度。
+5. Peukert：
+   在每个固定温度下对 discharge current-time 关系拟合很好，但作为跨温度预测先验并未稳定优于 conventional GPR，因此只保留为物理诊断。
+
+四、主要文献
+------------
+Ghosh et al., Journal of Energy Storage 113 (2025) 115562
+DOI: 10.1016/j.est.2025.115562
+
+Su et al., Advanced Science 10 (2023) 2301737
+DOI: 10.1002/advs.202301737
+
+Pan, Gu, Wu, Energy Advances 2 (2023) 843-853
+DOI: 10.1039/D3YA00071K
+
+Yang, Journal of Energy Storage 22 (2019) 98-105
+DOI: 10.1016/j.est.2019.01.022
+
+Yang, IEEE Transactions on Power Electronics 34(10) (2019) 9978-9992
+DOI: 10.1109/TPEL.2018.2890392
+
+五、应用定位
+------------
+不是“替代所有高温实验”，而是：
+
+uncertainty-aware virtual temperature GCD testing and experimental planning
+
+输入目标 T / J 后输出：
+- complete predicted V(t)
+- 95% predictive interval
+- predicted total period
+- charge/discharge specific charge
+- uncertainty map
+
+再据此优先选择最值得补测的 temperature-current condition。
+
+六、推荐上传方式
+----------------
+直接上传整个原始 ZIP。
+程序自动识别：
+    .../30/GCD/0.5.txt
+    .../30/GCD/1.txt
+    ...
+CV / EIS 自动忽略。
+不再需要每个温度重复上传 GCD 文件。
+
+七、下一阶段
+------------
+GCD 主模型冻结后，不再继续开发 V5/V6。
+下一步进入 temperature-dependent EIS：
+- Nyquist / Bode QC
+- equivalent-circuit selection
+- Rs / Rct / CPE / diffusion-related parameters
+- temperature dependence
+- 与 GCD total period、IR drop、specific charge 的机制关联

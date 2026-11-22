@@ -1,0 +1,31 @@
+EIS 模型选择与拟合 V1 —— 运行说明
+
+1. 使用项目根目录原有启动方式启动 Streamlit。
+2. 进入“温度依赖 EIS”页面。
+3. 直接上传之前同一个完整原始 ZIP。
+4. 程序会自动读取：
+   - 温度/EIS/*.txt
+   - 温度/GCD/*.txt
+   CV 会自动忽略。
+5. 点击“运行正式 EIS 模型选择与拟合”。
+
+程序自动完成：
+- metadata / Init E 检查
+- Nyquist / Bode
+- linear KK screening
+- candidate circuit screening
+- parameter boundary / conditioning check
+- final L + Rs + CPE fit
+- local 95% parameter CI
+- high-frequency intercept cross-check
+- low-frequency / relaxation diagnostic
+- exploratory Rs Arrhenius check
+- EIS ↔ GCD temperature-level association
+- CSV export
+
+重要：
+- 不要把复杂双-RQ中任一个 R 自动命名为 Rct。
+- 不要把 CPE 的 Q 直接当成普通电容。
+- 当前 C'' peak 在 0.01 Hz 测量下限，因此不要报告正式 τ0。
+- 当前 Arrhenius apparent Ea 约 2.6 kJ/mol，但 R²≈0.71，不能作为强机理结论。
+- 当前每个温度只有一条 EIS，Init E 也不完全一致，论文必须作为限制说明。
